@@ -1,0 +1,64 @@
+{
+  "entities": {
+    "customers": {
+      "fields": [
+        {"name": "id", "caseSensitive": true},
+        {"name": "name", "caseSensitive": false},
+        {"name": "email", "caseSensitive": false}
+      ],
+      "primaryKey": "id"
+    },
+    "orders": {
+      "fields": [
+        {"name": "id", "caseSensitive": true},
+        {"name": "customer_id", "caseSensitive": true},
+        {"name": "order_date", "caseSensitive": true},
+        {"name": "status", "caseSensitive": false}
+      ],
+      "primaryKey": "id"
+    },
+    "products": {
+      "fields": [
+        {"name": "id", "caseSensitive": true},
+        {"name": "name", "caseSensitive": false},
+        {"name": "category", "caseSensitive": false},
+        {"name": "price", "caseSensitive": true}
+      ],
+      "primaryKey": "id"
+    },
+    "order_products": {
+      "fields": [
+        {"name": "order_id", "caseSensitive": true},
+        {"name": "product_id", "caseSensitive": true},
+        {"name": "quantity", "caseSensitive": true}
+      ],
+      "primaryKey": ["order_id", "product_id"]
+    }
+  },
+  "relationships": [
+    {
+      "from": "orders",
+      "to": "customers",
+      "type": "many-to-one",
+      "fields": {
+        "customer_id": "id"
+      }
+    },
+    {
+      "from": "order_products",
+      "to": "orders",
+      "type": "many-to-one",
+      "fields": {
+        "order_id": "id"
+      }
+    },
+    {
+      "from": "order_products",
+      "to": "products",
+      "type": "many-to-one",
+      "fields": {
+        "product_id": "id"
+      }
+    }
+  ]
+}

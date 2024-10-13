@@ -1,0 +1,34 @@
+{
+  "tables": {
+    "customers": {
+      "columns": [
+        {"name": "id", "caseSensitive": true},
+        {"name": "name", "caseSensitive": false},
+        {"name": "email", "caseSensitive": false}
+      ]
+    },
+    "orders": {
+      "columns": [
+        {"name": "id", "caseSensitive": true},
+        {"name": "customer_id", "caseSensitive": true},
+        {"name": "order_date", "caseSensitive": true},
+        {"name": "status", "caseSensitive": false}
+      ]
+    },
+    "products": {
+      "columns": [
+        {"name": "id", "caseSensitive": true},
+        {"name": "name", "caseSensitive": false},
+        {"name": "category", "caseSensitive": false},
+        {"name": "price", "caseSensitive": true}
+      ]
+    },
+    "order_products": {
+      "columns": [
+        {"name": "order_id", "caseSensitive": true},
+        {"name": "product_id", "caseSensitive": true},
+        {"name": "quantity", "caseSensitive": true}
+      ]
+    }
+  }
+}
