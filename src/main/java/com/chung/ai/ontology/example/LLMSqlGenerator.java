@@ -17,6 +17,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * The LLMSqlGenerator class is a Spring service that generates SQL queries from natural language inputs using an OpenAI language model.
+ * It can include ontology metadata in the query generation process and interacts with a data access layer to execute the generated SQL queries.
+ * The class also handles initialization and configuration of the language model and ontology data.
+ *
+ * Author: Chung Ha
+ */
 @Service
 @Data
 @Slf4j

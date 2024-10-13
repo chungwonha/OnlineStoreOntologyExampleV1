@@ -8,6 +8,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
+/**
+ * QueryController is a REST controller that handles HTTP POST requests for processing SQL queries.
+ * It uses the LLMSqlGenerator service to generate SQL queries from natural language inputs and can
+ * optionally include ontology metadata in the query generation process.
+ *
+ * Author: Chung Ha
+ */
 @RestController
 @Slf4j
 public class QueryController {

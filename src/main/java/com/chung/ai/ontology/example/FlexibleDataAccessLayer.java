@@ -7,6 +7,13 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * The FlexibleDataAccessLayer class is a Spring repository that provides flexible data access methods.
+ * It uses JdbcTemplate to execute SQL queries and retrieve results as a list of maps.
+ * This class logs the executed SQL queries and their parameters for debugging purposes.
+ *
+ * Author: Chung Ha
+ */
 @Repository
 @Slf4j
 public class FlexibleDataAccessLayer {
