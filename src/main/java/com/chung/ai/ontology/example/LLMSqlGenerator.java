@@ -40,22 +40,29 @@ public class LLMSqlGenerator {
 
     @Autowired
     FlexibleDataAccessLayer dataAccessLayer;
-    @Value("${app.ontology.file-name}")
-    private String ontologyFileName;
-    @Value("${app.metadata-only.file-name}")
-    private String metadataOnly;
 
-    private String ontologyJson;
+    @Value("${app.ontology.file-name}")
+    private String ontologyFilePath;
+
+    @Value("${app.metadata-only.file-name}")
+    private String metadataOnlyFilePath;
+
+//    private String ontologyJson;
+    private String owlOntology;
     private String metadataOnlyJson;
     private String targetDatabase;
 
     public String ontologyJson() throws IOException {
-        ClassPathResource resource = new ClassPathResource(ontologyFileName);
+        ClassPathResource resource = new ClassPathResource(ontologyFilePath);
         return StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
     }
 
-    public String metadataOnlyJson() throws IOException {
-        ClassPathResource resource = new ClassPathResource(metadataOnly);
+    public String retrieveOntologyOwl() throws IOException {
+        ClassPathResource resource = new ClassPathResource(ontologyFilePath);
+        return StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
+    }
+    public String retrieveMetadataOnlyJson() throws IOException {
+        ClassPathResource resource = new ClassPathResource(metadataOnlyFilePath);
         return StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
     }
 
@@ -66,51 +73,50 @@ public class LLMSqlGenerator {
                         .builder()
                         .apiKey(openaiApiKey)
                         .modelName(OpenAiChatModelName.GPT_4).build();
-        this.ontologyJson = ontologyJson();
-        this.metadataOnlyJson = metadataOnlyJson();
+//        this.ontologyJson = ontologyJson();
+        this.owlOntology = retrieveOntologyOwl();
+        this.metadataOnlyJson = retrieveMetadataOnlyJson();
         this.targetDatabase = determineTargetDatabase(driverClassName);
 
     }
 
-    public String generateSql(String naturalLanguageQuery) {
-
-        String prompt = buildPrompt(naturalLanguageQuery, ontologyJson, targetDatabase);
-        return model.generate(prompt);
-    }
-
     public String generateSql(String naturalLanguageQuery, boolean includesOntology) {
-
-        String prompt = buildPrompt(naturalLanguageQuery, ontologyJson, targetDatabase, includesOntology);
+        String prompt = includesOntology ? buildOntologyPrompt(naturalLanguageQuery, targetDatabase)
+                            : buildMetadataOnlyPrompt(naturalLanguageQuery, targetDatabase);
         return model.generate(prompt);
     }
 
 
-    private String buildPrompt(String query, String ontologyJson, String targetDatabase) {
+    private String buildOntologyPrompt(String query, String targetDatabase) {
+        log.info("buildOntologyPrompt: {}", owlOntology);
         return String.format(
-                "Given the following %s:\n\n%s\n\n" +
-                        "Generate an SQL query for the following request:\n\n%s\n\n" +
+                "Given the following ontology in OWL Turtle syntax:\n\n%s\n\n" +
+                        "Note the following custom annotations:\n" +
+                        "- meta:tableName specifies the database table name for a class\n" +
+                        "- meta:columnName specifies the database column name for a property\n" +
+                        "- meta:primaryKey indicates if a property is part of the primary key\n\n" +
+                        "Generate an SQL query for the following request:\n%s\n\n" +
                         "The target database is %s. Please ensure the SQL is compatible with this database.\n" +
                         "For H2 database, use DATEADD function instead of DATE_SUB for date arithmetic.\n" +
-                        "For non-case-sensitive fields (where 'caseSensitive' is false), use the appropriate character function in the WHERE condition to ensure case-insensitive comparison. " +
-                        "For H2, use the LOWER function for case-insensitive comparisons.\n" +
+                        "For non-case-sensitive fields (subproperties of :caseInsensitiveField), use the LOWER function in the WHERE condition to ensure case-insensitive comparison.\n" +
+                        "Use the table and column names specified in the meta:tableName and meta:columnName annotations.\n" +
                         "Please provide only the SQL query without any additional explanation.\n" +
                         "If you cannot generate a correct SQL query due to lack of information, state that explicitly.",
-                ontologyJson, query, targetDatabase
+                owlOntology, query, targetDatabase
         );
     }
 
-    private String buildPrompt(String query, String schemaJson, String targetDatabase, boolean includesOntology) {
-        String schemaType = includesOntology ? "schema and relationships (ontology)" : "database schema";
+    private String buildMetadataOnlyPrompt(String query, String targetDatabase) {
+        log.info("buildMetadataOnlyPrompt: {}", metadataOnlyJson);
         return String.format(
-                "Given the following %s:\n\n%s\n\n" +
-                        "Generate an SQL query for the following request:\n\n%s\n\n" +
+                "Given the following database metadata:\n\n%s\n\n" +
+                        "Generate an SQL query for the following request:\n%s\n\n" +
                         "The target database is %s. Please ensure the SQL is compatible with this database.\n" +
                         "For H2 database, use DATEADD function instead of DATE_SUB for date arithmetic.\n" +
-                        "For non-case-sensitive fields (where 'caseSensitive' is false), use the appropriate character function in the WHERE condition to ensure case-insensitive comparison. " +
-                        "For H2, use the LOWER function for case-insensitive comparisons.\n" +
+                        "For non-case-sensitive fields (where \"caseSensitive\": false), use the LOWER function in the WHERE condition to ensure case-insensitive comparison.\n" +
                         "Please provide only the SQL query without any additional explanation.\n" +
                         "If you cannot generate a correct SQL query due to lack of information, state that explicitly.",
-                schemaType, schemaJson, query, targetDatabase
+                metadataOnlyJson, query, targetDatabase
         );
     }
 

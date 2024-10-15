@@ -1,0 +1,210 @@
+@prefix : <http://example.com/online-store#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix meta: <http://example.com/metadata#> .
+
+:OnlineStore rdf:type owl:Ontology .
+
+# Metadata annotations
+meta:tableName rdf:type owl:AnnotationProperty .
+meta:columnName rdf:type owl:AnnotationProperty .
+meta:sqlDataType rdf:type owl:AnnotationProperty .
+meta:primaryKey rdf:type owl:AnnotationProperty .
+meta:foreignKey rdf:type owl:AnnotationProperty .
+meta:referencedColumn rdf:type owl:AnnotationProperty .
+meta:isDerived rdf:type owl:AnnotationProperty .
+meta:derivationQuery rdf:type owl:AnnotationProperty .
+meta:index rdf:type owl:AnnotationProperty .
+
+# Classes
+:Customer rdf:type owl:Class ;
+    meta:tableName "customers" .
+
+:PremiumCustomer rdf:type owl:Class ;
+    rdfs:subClassOf :Customer ;
+    rdfs:comment "A customer who meets or exceeds the premium criteria" .
+
+:Order rdf:type owl:Class ;
+    meta:tableName "orders" .
+
+:Product rdf:type owl:Class ;
+    meta:tableName "products" .
+
+:OrderProduct rdf:type owl:Class ;
+    meta:tableName "order_products" .
+
+# Object Properties (Relationships)
+:hasOrder rdf:type owl:ObjectProperty ;
+    rdfs:domain :Customer ;
+    rdfs:range :Order ;
+    owl:inverseOf :isOrderedBy ;
+    meta:foreignKey "true" ;
+    meta:referencedColumn "customer_id" .
+
+:isOrderedBy rdf:type owl:ObjectProperty ;
+    rdfs:domain :Order ;
+    rdfs:range :Customer .
+
+:includesProduct rdf:type owl:ObjectProperty ;
+    rdfs:domain :Order ;
+    rdfs:range :Product .
+
+:isIncludedIn rdf:type owl:ObjectProperty ;
+    rdfs:domain :Product ;
+    rdfs:range :Order ;
+    owl:inverseOf :includesProduct .
+
+# Data Properties (Fields)
+:hasId rdf:type owl:DatatypeProperty ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:string ;
+    rdfs:subPropertyOf :caseSensitiveField ;
+    meta:columnName "id" ;
+    meta:sqlDataType "VARCHAR(36)" ;
+    meta:primaryKey "true" .
+
+:hasName rdf:type owl:DatatypeProperty ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:string ;
+    rdfs:subPropertyOf :caseInsensitiveField ;
+    meta:columnName "name" ;
+    meta:sqlDataType "VARCHAR(100)" .
+
+:hasEmail rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Customer ;
+    rdfs:range xsd:string ;
+    rdfs:subPropertyOf :caseInsensitiveField ;
+    meta:columnName "email" ;
+    meta:sqlDataType "VARCHAR(100)" .
+
+:hasOrderDate rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Order ;
+    rdfs:range xsd:dateTime ;
+    rdfs:subPropertyOf :caseSensitiveField ;
+    meta:columnName "order_date" ;
+    meta:sqlDataType "TIMESTAMP" .
+
+:hasStatus rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Order ;
+    rdfs:range xsd:string ;
+    rdfs:subPropertyOf :caseInsensitiveField ;
+    meta:columnName "status" ;
+    meta:sqlDataType "VARCHAR(20)" .
+
+:hasCategory rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Product ;
+    rdfs:range xsd:string ;
+    rdfs:subPropertyOf :caseInsensitiveField ;
+    meta:columnName "category" ;
+    meta:sqlDataType "VARCHAR(50)" .
+
+:hasPrice rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Product ;
+    rdfs:range xsd:decimal ;
+    rdfs:subPropertyOf :caseSensitiveField ;
+    meta:columnName "price" ;
+    meta:sqlDataType "DECIMAL(10, 2)" .
+
+:hasQuantity rdf:type owl:DatatypeProperty ;
+    rdfs:domain :OrderProduct ;
+    rdfs:range xsd:integer ;
+    rdfs:subPropertyOf :caseSensitiveField ;
+    meta:columnName "quantity" ;
+    meta:sqlDataType "INT" .
+
+:hasTotalPurchases rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Customer ;
+    rdfs:range xsd:decimal ;
+    meta:columnName "total_purchases" ;
+    meta:sqlDataType "DECIMAL(10, 2)" ;
+    meta:index "idx_customer_total_purchases" .
+
+:hasOrderCount rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Customer ;
+    rdfs:range xsd:integer ;
+    meta:columnName "order_count" ;
+    meta:sqlDataType "INT" ;
+    meta:index "idx_customer_order_count" .
+
+# Case Sensitivity
+:caseSensitiveField rdf:type owl:DatatypeProperty .
+:caseInsensitiveField rdf:type owl:DatatypeProperty .
+
+# Premium Customer Definition
+:PremiumCustomer owl:equivalentClass [
+    rdf:type owl:Class ;
+    owl:intersectionOf (
+        :Customer
+        [ rdf:type owl:Restriction ;
+          owl:onProperty :hasTotalPurchases ;
+          owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                               owl:onDatatype xsd:decimal ;
+                               owl:withRestriction ([ xsd:minInclusive "1000.00"^^xsd:decimal ]) ]
+        ]
+        [ rdf:type owl:Restriction ;
+          owl:onProperty :hasOrderCount ;
+          owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                               owl:onDatatype xsd:integer ;
+                               owl:withRestriction ([ xsd:minInclusive "5"^^xsd:integer ]) ]
+        ]
+    )
+] ;
+
+
+# Explicit Join Conditions and Foreign Keys
+:OrderProduct rdfs:subClassOf
+    [ rdf:type owl:Restriction ;
+      owl:onProperty :isIncludedIn ;
+      owl:someValuesFrom :Order ;
+      meta:foreignKey "true" ;
+      meta:columnName "order_id" ;
+      meta:referencedColumn "id" ;
+      meta:sqlDataType "VARCHAR(36)"
+    ],
+    [ rdf:type owl:Restriction ;
+      owl:onProperty :includesProduct ;
+      owl:someValuesFrom :Product ;
+      meta:foreignKey "true" ;
+      meta:columnName "product_id" ;
+      meta:referencedColumn "id" ;
+      meta:sqlDataType "VARCHAR(36)"
+    ] .
+
+:Order rdfs:subClassOf
+    [ rdf:type owl:Restriction ;
+      owl:onProperty :isOrderedBy ;
+      owl:someValuesFrom :Customer ;
+      meta:foreignKey "true" ;
+      meta:columnName "customer_id" ;
+      meta:referencedColumn "id" ;
+      meta:sqlDataType "VARCHAR(36)"
+    ] .
+
+# Indexes
+:Customer rdfs:subClassOf
+    [ rdf:type owl:Restriction ;
+      owl:onProperty :hasTotalPurchases ;
+      meta:index "idx_customer_total_purchases"
+    ],
+    [ rdf:type owl:Restriction ;
+      owl:onProperty :hasOrderCount ;
+      meta:index "idx_customer_order_count"
+    ] .
+
+:Order rdfs:subClassOf
+    [ rdf:type owl:Restriction ;
+      owl:onProperty :isOrderedBy ;
+      meta:index "idx_order_customer"
+    ],
+    [ rdf:type owl:Restriction ;
+      owl:onProperty :hasOrderDate ;
+      meta:index "idx_order_date"
+    ] .
+
+:Product rdfs:subClassOf
+    [ rdf:type owl:Restriction ;
+      owl:onProperty :hasCategory ;
+      meta:index "idx_product_category"
+    ] .

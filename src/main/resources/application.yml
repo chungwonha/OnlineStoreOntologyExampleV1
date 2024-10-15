@@ -11,7 +11,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: true
 
   h2:
@@ -52,6 +52,6 @@ app:
     memory:
       max-messages: 1000
   ontology:
-    file-name: ontology-metadata.json
+    file-name: ontology-metadata.owl
   metadata-only:
     file-name: metadata-only.json
